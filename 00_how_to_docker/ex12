@@ -1,0 +1,16 @@
+######## ex12 ########
+# add default auth plugin to fix the MySQL 8 error
+
+docker container run --name spawning-pool --restart on-failure -v hatchery:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=Kerrigan -e MYSQL_DATABASE=zerglings -d mysql --default-authentication-plugin=mysql_native_password
+
+# to see the db inside the container:
+# docker exec -it spawning-pool bash
+# mysql
+# show databases;
+
+# if needed:
+# mysql --user=root --password=Kerrigan
+
+# To see the volume, check in Mounts :
+# docker container inspect spawning-pool | less
+

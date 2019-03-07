@@ -1,0 +1,6 @@
+######## ex32 ########
+docker rm -f $(docker ps -aq)
+
+# check if nothing left:
+# docker container ls -a
+

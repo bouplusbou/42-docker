@@ -1,0 +1,3 @@
+######## ex06 ########
+docker container run --name overlord --restart=always --publish 5000:80 --detach nginx
+

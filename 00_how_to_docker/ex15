@@ -1,0 +1,5 @@
+######## ex15 ########
+docker container run --name roach-warden -p 8081:80 --link spawning-pool:db -d phpmyadmin/phpmyadmin
+
+# go to http://192.168.99.100:8081, connect with root:Kerrigan, and check in the db if the post was well created
+

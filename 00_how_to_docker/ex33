@@ -1,0 +1,3 @@
+######## ex33 ########
+docker rmi -f $(docker images -q)
+

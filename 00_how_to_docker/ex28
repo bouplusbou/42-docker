@@ -1,0 +1,6 @@
+######## ex28 ########
+docker service create --name marines --network overmind -e OC_USERNAME=bboucher -e OC_PASSWD=password --replicas 2 42school/marine-squad
+
+# check it:
+# docker service ls
+

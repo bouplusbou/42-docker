@@ -1,0 +1,3 @@
+######## ex05 ########
+docker run hello-world
+

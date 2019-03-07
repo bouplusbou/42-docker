@@ -1,0 +1,7 @@
+######## ex09 ########
+apt-get update
+apt-get full-upgrade -y
+apt-get install gcc
+apt-get install vim
+apt-get install git
+

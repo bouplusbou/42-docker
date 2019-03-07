@@ -1,0 +1,10 @@
+######## ex19 ########
+# create a python script using https://gist.github.com/bouplusbou/7a6fcb585dea55f5a489313557691aa2 and add it here /users/bboucher/flask
+# flask is using the port 5000 but we need to use the port 3000 (specified in hello.pi)
+
+docker container run -t --name Abathur -v /Users/bboucher:/root -p 3000:3000 -d python:2-slim \
+&& docker exec Abathur pip install flask \
+&& docker exec Abathur python /root/flask/hello.py
+
+# then check on http://192.168.99.100:3000/ if it's running
+
