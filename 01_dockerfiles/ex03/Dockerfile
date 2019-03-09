@@ -1,40 +1,43 @@
-FROM ubuntu:14.04
+# docker image build -t gitlab_img .
+# docker run --name gitlab_cont -it -p 443:443 -p 80:80 -p 2222:22 --privileged gitlab_img
+# go to https://192.168.99.100
+# get your ssh key with cat ~/.ssh/id_rsa.pub and paste in in the gitlab settings
+# to clone a repo:
+# GIT_SSL_NO_VERIFY=true gcl https://192.168.99.100/bboucher/project.git
+# then to avoid having to launch the command every time, inside the cloned folder:
+# git config http.sslVerify false
 
-# Install required packages
-RUN apt-get update -q \
-	&& DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
-	ca-certificates \
-	openssh-server \
-	wget \
-	apt-transport-https
+FROM debian
 
-# Download & Install GitLab
-RUN echo "deb https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_gitlab-ce.list
-RUN wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
-RUN apt-get update && apt-get install -yq --no-install-recommends gitlab-ce
+# Init
+RUN apt-get update \
+	&& apt-get install -yq curl openssh-server ca-certificates
 
-# Manage SSHD through runit
-RUN  mkdir -p /opt/gitlab/sv/sshd/supervise \
-	&& mkfifo /opt/gitlab/sv/sshd/supervise/ok \
-	&& echo -e "#!/bin/sh\nexec 2>&1\numask 077\nexec /usr/sbin/sshd -D" > /opt/gitlab/sv/sshd/run \
-	&& chmod a+x /opt/gitlab/sv/sshd/run \
-	&& ln -s /opt/gitlab/sv/sshd /opt/gitlab/service \
-	&& mkdir -p /var/run/sshd
+# Install Gitlab-ce
+RUN curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | bash \
+	&& apt-get install -yq gitlab-ce
 
-# Configure HTTPS
-RUN mkdir -p /etc/gitlab/ssl
-RUN chmod 700 /etc/gitlab/ssl
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
-	-subj /C=FR/ST=75/L=Paris/O=rs1/OU=rs1/CN=192.168.99.100/emailAddress=bboucher@student.42.fr \
-	-keyout /etc/gitlab/ssl/selfsigned.key -out /etc/gitlab/ssl/selfsigned.crt
+# Config SSL cert
+RUN mkdir -p /etc/gitlab/ssl \
+	&& chmod 700 /etc/gitlab/ssl \
+	&& openssl req -x509 -nodes -newkey rsa:4096 -days 365 \ 
+		-keyout /etc/gitlab/ssl/ssl.key -out /etc/gitlab/ssl/ssl.crt \
+		-subj /C=FR/ST=42/L=Paris/O=42/OU=Org/CN=192.168.99.100 \
+	&& echo "external_url \"https://192.168.99.100\"" >> /etc/gitlab/gitlab.rb \
+	&& echo "nginx['redirect_http_to_https'] = true" >> /etc/gitlab/gitlab.rb \
+	&& echo "nginx['ssl_certificate'] = \"/etc/gitlab/ssl/ssl.crt\"" >> /etc/gitlab/gitlab.rb \
+	&& echo "nginx['ssl_certificate_key'] = \"/etc/gitlab/ssl/ssl.key\"" >> /etc/gitlab/gitlab.rb
 
-RUN echo "external_url \"https://192.168.99.100\"" >> /etc/gitlab/gitlab.rb
-RUN echo "nginx['redirect_http_to_https'] = true" >> /etc/gitlab/gitlab.rb
-RUN echo "nginx['ssl_certificate'] = \"/etc/gitlab/ssl/selfsigned.crt\"" >> /etc/gitlab/gitlab.rb
-RUN echo "nginx['ssl_certificate_key'] = \"/etc/gitlab/ssl/selfsigned.key\"" >> /etc/gitlab/gitlab.rb
-RUN echo "gitlab_rails['gitlab_shell_ssh_port'] = 2222" >> /etc/gitlab/gitlab.rb
-
-ENTRYPOINT service ssh start && (/opt/gitlab/embedded/bin/runsvdir-start &) && gitlab-ctl reconfigure && gitlab-ctl tail
+# Config SSH 
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+	&& echo 'root:root' | chpasswd \
+	&& echo "gitlab_rails['gitlab_shell_ssh_port'] = 2222" >> /etc/gitlab/gitlab.rb
 
 # Expose web & ssh
 EXPOSE 443 80 22
+
+# Launch
+CMD (service ssh start \
+	&& /opt/gitlab/embedded/bin/runsvdir-start &) \
+	&& gitlab-ctl reconfigure \
+	&& gitlab-ctl tail

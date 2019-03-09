@@ -1,17 +1,12 @@
-# base image
-FROM node:9.6.1
+FROM drupal:8.2
 
-# set working directory
-RUN mkdir /usr/src/app
-WORKDIR /usr/src/app
+RUN apt-get update && apt-get install -y git \
+	&& rm -rf /var/lib/apt/lists/*
 
-# add `/usr/src/app/node_modules/.bin` to $PATH
-ENV PATH /usr/src/app/node_modules/.bin:$PATH
+WORKDIR /var/www/html/themes
 
-# install and cache app dependencies
-COPY package.json /usr/src/app/package.json
-RUN npm install --silent
-RUN npm install react-scripts@1.1.1 -g --silent
+RUN git clone --branch 8.x-3.x --single-branch --depth 1 https://git.drupal.org/project/bootstrap.git \
+	&& chown -R www-data:www-data bootstrap
 
-# start app
-CMD ["npm", "start"]
+WORKDIR /var/www/html
+

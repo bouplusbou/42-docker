@@ -1,0 +1,36 @@
+# if not installed :
+# brew install docker-compose
+# docker-compose up 
+# when installing Drupal choose postgreSQL 'postgres' and 'password'
+# in advanced config change localhost by the name of the service 'db'
+# check docker container ls to see the used port
+# to clean up:
+# docker-compose down -v
+
+version: '2'
+
+services:
+    postgres: 
+        image: postgres:9.6
+        environment:
+            POSTGRES_PASSWORD: password
+        volumes:
+            - drupal-data:/var/lib/postgresql/data
+
+    drupal:
+        image: custom-drupal
+        build: .
+        ports:
+            - 8089:80
+        volumes:
+            - drupal-modules:/var/www/html/modules
+            - drupal-profiles:/var/www/html/profiles
+            - drupal-sites:/var/www/html/sites
+            - drupal-themes:/var/www/html/themes
+
+volumes:
+    drupal-data:
+    drupal-modules:
+    drupal-profiles:
+    drupal-sites:
+    drupal-themes:
